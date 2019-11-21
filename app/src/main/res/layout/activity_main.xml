@@ -34,6 +34,12 @@
             android:layout_height="wrap_content"
             android:text="camera" />
 
+        <Button
+            android:id="@+id/btnInstagram"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Instagram" />
+
     </LinearLayout>
 
     <TextView
