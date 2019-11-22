@@ -4,7 +4,7 @@
 
     <application>
         <activity
-            android:name=".InstagramActivity"
+            android:name=".ui.InstagramActivity"
             android:theme="@style/InstagramTheme" />
 
         <provider

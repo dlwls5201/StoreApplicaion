@@ -11,7 +11,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.tistory.blackjin.myinatagram.InstagramActivity
+import com.tistory.blackjin.myinatagram.ui.InstagramActivity
 import gun0912.tedimagepicker.builder.TedImagePicker
 import kotlinx.android.synthetic.main.activity_main.*
 import timber.log.Timber
