@@ -8,6 +8,46 @@
         android:layout_height="match_parent"
         tools:context=".presentation.user.UserActivity">
 
+        <FrameLayout
+            android:id="@+id/toolbar"
+            android:layout_width="0dp"
+            android:layout_height="51dp"
+            android:background="@color/black"
+            android:paddingStart="@dimen/activity_horizontal_margin"
+            android:paddingEnd="@dimen/activity_horizontal_margin"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <TextView
+                android:id="@+id/tv_cancel"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:paddingStart="12dp"
+                android:paddingTop="8dp"
+                android:paddingEnd="12dp"
+                android:paddingBottom="8dp"
+                android:text="취소"
+                android:textColor="@color/txt_dark_gray"
+                tools:text="취소" />
+
+            <TextView
+                android:id="@+id/tv_done"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_gravity="end"
+                android:gravity="center"
+                android:paddingStart="12dp"
+                android:paddingTop="8dp"
+                android:paddingEnd="12dp"
+                android:paddingBottom="8dp"
+                android:text="다음"
+                android:textColor="@color/skyBlue"
+                tools:text="다음" />
+
+        </FrameLayout>
+
         <androidx.viewpager2.widget.ViewPager2
             android:id="@+id/vpInstagram"
             android:layout_width="0dp"
@@ -16,7 +56,7 @@
             app:layout_constraintBottom_toTopOf="@+id/llBottomNav"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toBottomOf="@+id/toolbar" />
 
         <com.tistory.blackjin.myinatagram.customview.BottomNavView
             android:id="@+id/llBottomNav"
