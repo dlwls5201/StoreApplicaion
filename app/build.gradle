@@ -5,7 +5,6 @@ apply plugin: 'kotlin-kapt'
 
 android {
     compileSdkVersion versions.compileSdkVersion
-    //buildToolsVersion "29.0.2"
 
     defaultConfig {
         applicationId "com.tistory.blackjin.storeapplicaion"
@@ -50,6 +49,9 @@ dependencies {
 
     implementation 'com.jakewharton.timber:timber:4.7.1'
     implementation 'gun0912.ted:tedimagepicker:1.0.9'
+
+    // your app's other dependencies
+    implementation 'com.facebook.fresco:fresco:2.0.0'
 
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
