@@ -14,13 +14,9 @@ class BottomNavView @JvmOverloads constructor(
 
     private val items = hashMapOf<Int, View>()
 
-    fun setViewPager2(pager: ViewPager2) {
+    fun setViewPager(pager: ViewPager2) {
 
         pager.adapter?.let { adapter ->
-
-            //Log.d(TAG, "childCount : $childCount")
-            //Log.d(TAG, "itemCount : ${adapter.itemCount}")
-
             if (childCount == adapter.itemCount) {
                 for (i in 0 until childCount) {
                     items[i] = getChildAt(i).apply {
@@ -41,13 +37,7 @@ class BottomNavView @JvmOverloads constructor(
                 for ((k, v) in items) {
                     v.isSelected = k == position
                 }
-                //Log.e(TAG, "position : $position")
             }
         })
-    }
-
-    companion object {
-
-        const val TAG = "BlackJin"
     }
 }
