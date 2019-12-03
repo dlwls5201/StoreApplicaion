@@ -1,6 +1,7 @@
 package com.tistory.blackjin.storeapplicaion
 
 import android.Manifest
+import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
@@ -8,6 +9,12 @@ import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.util.TypedValue
+import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.RelativeLayout
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -60,34 +67,53 @@ class MainActivity : AppCompatActivity() {
             chkPermission()
         }
 
-
     }
 
     private fun showSingleImage(uri: Uri) {
-        val bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            val source = ImageDecoder.createSource(this.contentResolver, uri)
-            ImageDecoder.decodeBitmap(source)
-        } else {
-            contentResolver.openInputStream(uri)?.use { inputStream ->
-                BitmapFactory.decodeStream(inputStream)
-            }
-        }
-        imageView.setImageBitmap(bitmap)
+        setImages(listOf(uri))
     }
 
     private fun showMultiImage(uris: List<Uri>) {
+        setImages(uris)
+    }
 
-        val uri = uris[0]
+    private fun setImages(uris: List<Uri>) {
+        llImageParent.removeAllViews()
 
-        val bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            val source = ImageDecoder.createSource(this.contentResolver, uri)
-            ImageDecoder.decodeBitmap(source)
-        } else {
-            contentResolver.openInputStream(uri)?.use { inputStream ->
-                BitmapFactory.decodeStream(inputStream)
+        uris.forEach {
+            val bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                val source = ImageDecoder.createSource(this.contentResolver, it)
+                ImageDecoder.decodeBitmap(source)
+            } else {
+                contentResolver.openInputStream(it)?.use { inputStream ->
+                    BitmapFactory.decodeStream(inputStream)
+                }
             }
+
+            val item = RelativeLayout(this).apply {
+                layoutParams =
+                    LinearLayout.LayoutParams(600, ViewGroup.LayoutParams.MATCH_PARENT).apply {
+                        setMargins(0, 0, 10, 0)
+                    }
+            }
+
+            val imageView = ImageView(this).apply {
+                layoutParams = LinearLayout.LayoutParams(600, ViewGroup.LayoutParams.WRAP_CONTENT)
+                setImageBitmap(bitmap)
+            }
+
+            val sizeText = TextView(this).apply {
+                setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15f)
+
+                val info = "width : ${bitmap?.width}\nheight : ${bitmap?.height}"
+                text = info
+            }
+
+            item.addView(imageView)
+            item.addView(sizeText)
+
+            llImageParent.addView(item)
         }
-        imageView.setImageBitmap(bitmap)
     }
 
     override fun onRequestPermissionsResult(
@@ -117,7 +143,6 @@ class MainActivity : AppCompatActivity() {
                 || permissionCheckRead == PackageManager.PERMISSION_DENIED
                 || permissionCheckWrite == PackageManager.PERMISSION_DENIED
             ) {
-
                 // 권한 없음
                 showRequestPermission()
 
@@ -144,12 +169,37 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun goToInstagram() {
-        startActivity(
-            Intent(this, InstagramActivity::class.java)
+        startActivityForResult(
+            Intent(this, InstagramActivity::class.java),
+            REQUEST_INSTAGRAM
         )
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        Timber.d("requestCode : $requestCode , resultCode : $resultCode , data : $data")
+        if (resultCode == Activity.RESULT_OK) {
+            if (requestCode == REQUEST_INSTAGRAM) {
+                val uri: Uri? = data?.getParcelableExtra(InstagramActivity.EXTRA_PHOTO_URI)
+                val uris: List<Uri>? =
+                    data?.getParcelableArrayListExtra(InstagramActivity.EXTRA_PHOTO_URI_LIST)
+                Timber.d("uri : $uri")
+                Timber.d("uris : $uris")
+
+                if (uri != null) {
+                    showSingleImage(uri)
+                }
+
+                if (!uris.isNullOrEmpty()) {
+                    showMultiImage(uris)
+                }
+
+            }
+        }
     }
 
     companion object {
         private const val REQUEST_PERMISSION = 1000
+        private const val REQUEST_INSTAGRAM = 1001
     }
 }
