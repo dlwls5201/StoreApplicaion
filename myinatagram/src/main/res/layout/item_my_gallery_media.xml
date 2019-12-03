@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:bind="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <import type="com.tistory.blackjin.myinatagram.builder.type.SelectType" />
+
+        <import type="android.view.View" />
+
+        <variable
+            name="media"
+            type="com.tistory.blackjin.myinatagram.model.Media" />
+
+        <variable
+            name="selectType"
+            type="SelectType" />
+
+        <variable
+            name="isSelected"
+            type="boolean" />
+
+        <variable
+            name="selectedNumber"
+            type="int" />
+    </data>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:foreground="?android:attr/selectableItemBackground"
+        tools:layout_height="137dp"
+        tools:layout_width="137dp">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <ImageView
+                android:id="@+id/iv_image"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:scaleType="centerCrop"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintDimensionRatio="1:1"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                bind:imageUri="@{media.uri}" />
+
+            <FrameLayout
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:visibility="@{selectType == SelectType.MULTI ? View.VISIBLE : View.GONE}"
+                app:layout_constraintBottom_toBottomOf="@id/iv_image"
+                app:layout_constraintEnd_toEndOf="@id/iv_image"
+                app:layout_constraintStart_toStartOf="@id/iv_image"
+                app:layout_constraintTop_toTopOf="@id/iv_image">
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@color/white_50"
+                    android:visibility="@{isSelected ? View.VISIBLE : View.GONE}" />
+
+                <TextView
+                    style="@style/TextAppearance.AppCompat.Body1"
+                    android:layout_width="@dimen/list_item_avatar_size_small"
+                    android:layout_height="@dimen/list_item_avatar_size_small"
+                    android:layout_gravity="end"
+                    android:layout_margin="@dimen/default_padding_small"
+                    android:background="@{isSelected? @drawable/bg_multi_image_selected : @drawable/bg_multi_image_unselected}"
+                    android:gravity="center"
+                    android:text="@{isSelected? String.valueOf(selectedNumber) : ``}"
+                    android:textColor="@color/white"
+                    tools:background="@drawable/bg_multi_image_selected"
+                    tools:text="5" />
+            </FrameLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </FrameLayout>
+</layout>

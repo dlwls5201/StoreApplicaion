@@ -8,13 +8,13 @@
         android:layout_height="match_parent"
         tools:context=".presentation.user.UserActivity">
 
-        <FrameLayout
+        <RelativeLayout
             android:id="@+id/toolbar"
             android:layout_width="0dp"
             android:layout_height="51dp"
             android:background="@color/black"
-            android:paddingStart="@dimen/activity_horizontal_margin"
-            android:paddingEnd="@dimen/activity_horizontal_margin"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
@@ -30,13 +30,23 @@
                 android:paddingBottom="8dp"
                 android:text="취소"
                 android:textColor="@color/txt_dark_gray"
+                android:textSize="15sp"
                 tools:text="취소" />
+
+            <Spinner
+                android:id="@+id/sp_album"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/spinner_item_height"
+                android:layout_gravity="center_vertical"
+                android:layout_marginStart="10dp"
+                android:layout_toEndOf="@+id/tv_cancel"
+                android:background="@color/skyBlue" />
 
             <TextView
                 android:id="@+id/tv_done"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
-                android:layout_gravity="end"
+                android:layout_alignParentEnd="true"
                 android:gravity="center"
                 android:paddingStart="12dp"
                 android:paddingTop="8dp"
@@ -44,22 +54,23 @@
                 android:paddingBottom="8dp"
                 android:text="다음"
                 android:textColor="@color/skyBlue"
+                android:textSize="15sp"
+                android:textStyle="bold"
                 tools:text="다음" />
 
-        </FrameLayout>
+        </RelativeLayout>
 
-        <androidx.viewpager2.widget.ViewPager2
-            android:id="@+id/vpInstagram"
+        <FrameLayout
+            android:id="@+id/fl_fragment"
             android:layout_width="0dp"
             android:layout_height="0dp"
-            android:overScrollMode="never"
-            app:layout_constraintBottom_toTopOf="@+id/llBottomNav"
+            app:layout_constraintBottom_toTopOf="@+id/ll_bottom_nav"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/toolbar" />
 
-        <com.tistory.blackjin.myinatagram.customview.BottomNavView
-            android:id="@+id/llBottomNav"
+        <LinearLayout
+            android:id="@+id/ll_bottom_nav"
             android:layout_width="0dp"
             android:layout_height="50dp"
             android:orientation="horizontal"
@@ -68,22 +79,24 @@
             app:layout_constraintStart_toStartOf="parent">
 
             <TextView
+                android:id="@+id/tvLibrary"
                 style="@style/TextInstagramBottomNav"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:gravity="center"
-                android:text="라이브러리" />
+                android:text="@string/common_library" />
 
             <TextView
+                android:id="@+id/tvTakePhoto"
                 style="@style/TextInstagramBottomNav"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:gravity="center"
-                android:text="사진찍기" />
+                android:text="@string/common_take_picture" />
 
-        </com.tistory.blackjin.myinatagram.customview.BottomNavView>
+        </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>
