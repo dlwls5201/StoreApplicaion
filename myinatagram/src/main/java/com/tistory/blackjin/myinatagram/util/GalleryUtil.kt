@@ -4,6 +4,7 @@ import android.content.Context
 import android.database.Cursor
 import android.net.Uri
 import android.provider.MediaStore
+import com.tistory.blackjin.myinatagram.R
 import com.tistory.blackjin.myinatagram.builder.type.MediaType
 import com.tistory.blackjin.myinatagram.model.Album
 import com.tistory.blackjin.myinatagram.model.Media
@@ -13,10 +14,6 @@ import java.io.File
 import java.util.*
 
 internal object GalleryUtil {
-
-    init {
-        Timber.d("GalleryUtil init")
-    }
 
     private const val INDEX_MEDIA_URI = MediaStore.MediaColumns.DATA
     private const val INDEX_DATE_ADDED = MediaStore.MediaColumns.DATE_ADDED
@@ -66,8 +63,7 @@ internal object GalleryUtil {
                         .map(::getAlbum)
                         .toList()
 
-                    return@let albumList
-                    /*val totalAlbum = totalImageList.run {
+                    val totalAlbum = totalImageList.run {
                         val albumName = context.getString(R.string.image_picker_album_all)
                         Album(
                             albumName,
@@ -75,12 +71,10 @@ internal object GalleryUtil {
                             this
                         )
                     }
-
-                    Timber.d("totalAlbum : $totalAlbum")
-
                     mutableListOf(totalAlbum).apply {
                         addAll(albumList)
-                    }*/
+                    }
+
                 } ?: emptyList()
 
                 cursor?.close()
