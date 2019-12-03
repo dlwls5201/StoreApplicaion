@@ -90,7 +90,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            val item = RelativeLayout(this).apply {
+            val parent = RelativeLayout(this).apply {
                 layoutParams =
                     LinearLayout.LayoutParams(600, ViewGroup.LayoutParams.MATCH_PARENT).apply {
                         setMargins(0, 0, 10, 0)
@@ -98,7 +98,10 @@ class MainActivity : AppCompatActivity() {
             }
 
             val imageView = ImageView(this).apply {
-                layoutParams = LinearLayout.LayoutParams(600, ViewGroup.LayoutParams.WRAP_CONTENT)
+                layoutParams =
+                    RelativeLayout.LayoutParams(600, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                        addRule(RelativeLayout.CENTER_IN_PARENT)
+                    }
                 setImageBitmap(bitmap)
             }
 
@@ -109,10 +112,10 @@ class MainActivity : AppCompatActivity() {
                 text = info
             }
 
-            item.addView(imageView)
-            item.addView(sizeText)
+            parent.addView(imageView)
+            parent.addView(sizeText)
 
-            llImageParent.addView(item)
+            llImageParent.addView(parent)
         }
     }
 

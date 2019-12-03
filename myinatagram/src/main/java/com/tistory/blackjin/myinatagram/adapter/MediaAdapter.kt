@@ -3,7 +3,6 @@ package com.tistory.blackjin.myinatagram.adapter
 import android.app.Activity
 import android.net.Uri
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.databinding.ViewDataBinding
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
@@ -21,9 +20,6 @@ internal class MediaAdapter(
     private var selectType: SelectType = SelectType.SINGLE
 ) : RecyclerView.Adapter<BaseViewHolder<ViewDataBinding, Media>>() {
 
-    private val maxCount = 10
-    private val maxCountMessage = "10개 이상 선택할 수 없습니다."
-
     private val selectedUriList: MutableList<Uri> = mutableListOf()
 
     private val items = mutableListOf<Media>()
@@ -31,7 +27,7 @@ internal class MediaAdapter(
     var onItemClickListener: OnItemClickListener? = null
 
     interface OnItemClickListener {
-        fun onItemClick(data: Media, itemPosition: Int, layoutPosition: Int)
+        fun onItemClick(data: Media)
     }
 
     override fun onCreateViewHolder(
@@ -42,9 +38,7 @@ internal class MediaAdapter(
             onItemClickListener?.let { listener ->
                 itemView.setOnClickListener {
                     listener.onItemClick(
-                        getItem(adapterPosition),
-                        getItemPosition(adapterPosition),
-                        adapterPosition
+                        getItem(adapterPosition)
                     )
                 }
             }
@@ -74,12 +68,23 @@ internal class MediaAdapter(
         }
     }
 
+    fun getSelectedUriListIndex(uri: Uri): Int {
+        return if (selectedUriList.contains(uri)) {
+            selectedUriList.indexOf(uri)
+        } else {
+            -1
+        }
+    }
+
     fun toggleSingleAndMultiSelect(selectType: SelectType, uri: Uri) {
         this.selectType = selectType
-
-        //이미 선택되어진 아이템은 체크 표시 해놔야 합니다.
         notifyDataSetChanged()
-        toggleMediaSelect(uri)
+
+        if (selectType == SelectType.SINGLE) {
+            selectedUriList.clear()
+        } else {
+            toggleMediaSelect(uri)
+        }
     }
 
     fun replaceAll(items: List<Media>, useDiffCallback: Boolean = false) {
@@ -99,13 +104,8 @@ internal class MediaAdapter(
     }
 
     private fun addMedia(uri: Uri) {
-        if (selectedUriList.size == maxCount) {
-            val message = maxCountMessage
-            Toast.makeText(activity, message, Toast.LENGTH_SHORT).show()
-        } else {
-            selectedUriList.add(uri)
-            refreshSelectedView()
-        }
+        selectedUriList.add(uri)
+        refreshSelectedView()
     }
 
     private fun removeMedia(uri: Uri) {
