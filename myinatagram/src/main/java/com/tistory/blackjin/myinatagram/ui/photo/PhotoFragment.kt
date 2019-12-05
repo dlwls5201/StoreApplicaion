@@ -10,7 +10,6 @@ import android.util.DisplayMetrics
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.AccelerateInterpolator
 import android.widget.Toast
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.databinding.DataBindingUtil
@@ -94,6 +93,12 @@ class PhotoFragment : Fragment(), OnShowImageListener {
                 if (selectType == SelectType.SINGLE) {
                     selectType = SelectType.MULTI
                     setImageResource(R.drawable.ic_multi_select_on)
+
+                    //마지막 크롭 이미지를 제외하고 전부 제거합니다.
+                    val size = mGestureCropImageViewList.size
+                    for (i in 0 until size - 1) {
+                        mGestureCropImageViewList.removeAt(0)
+                    }
                 } else {
                     selectType = SelectType.SINGLE
                     setImageResource(R.drawable.ic_multi_select_off)
@@ -136,7 +141,6 @@ class PhotoFragment : Fragment(), OnShowImageListener {
             return
         } else {
             currentShowingUri = uri
-            mGestureCropImageViewList.clear()
             setUriToPreview(uri)
         }
     }
@@ -158,7 +162,6 @@ class PhotoFragment : Fragment(), OnShowImageListener {
                 //마지막 아이템의 제스터로 변경
                 val lastGestureCropImageView = mGestureCropImageViewList.last()
                 binding.ucrop.changeCropImageView(lastGestureCropImageView)
-
                 mediaAdapter.toggleMediaSelect(uri)
             } else {
                 Timber.d("only selected one item")
@@ -170,23 +173,36 @@ class PhotoFragment : Fragment(), OnShowImageListener {
                 return
             }
 
-            currentShowingUri = uri
-            setUriToPreview(uri)
-            mediaAdapter.toggleMediaSelect(uri)
+            if (isPreviewLoadComplete) {
+                currentShowingUri = uri
+                setUriToPreview(uri)
+                mediaAdapter.toggleMediaSelect(uri)
+            }
         }
 
     }
 
+    /**
+     * TransformImageListener 가 onLoadComplete 를 호출 받고나서 다음 작업을 처리해야 합니다.
+     */
+    private var isPreviewLoadComplete = true
+
     private fun setUriToPreview(uri: Uri) {
+
+        isPreviewLoadComplete = false
 
         with(binding.ucrop) {
             resetCropImageView()
 
             mGestureCropImageView = cropImageView.apply {
+
                 targetAspectRatio = 1f
 
                 isScaleEnabled = true
                 isRotateEnabled = false
+
+                setMaxResultImageSizeX(1000)
+                setMaxResultImageSizeY(1000)
 
                 setTransformImageListener(object :
                     TransformImageView.TransformImageListener {
@@ -195,8 +211,7 @@ class PhotoFragment : Fragment(), OnShowImageListener {
                     override fun onScale(currentScale: Float) {}
 
                     override fun onLoadComplete() {
-                        binding.ucrop.animate().alpha(1f).setDuration(300).interpolator =
-                            AccelerateInterpolator()
+                        isPreviewLoadComplete = true
                     }
 
                     override fun onLoadFailure(e: Exception) {
@@ -241,7 +256,6 @@ class PhotoFragment : Fragment(), OnShowImageListener {
 
         //albumList's first index is "ALL"
         val album = albumList[0]
-        Timber.d("albumList : $albumList")
 
         mediaAdapter.replaceAll(album.mediaUris)
 
@@ -254,7 +268,10 @@ class PhotoFragment : Fragment(), OnShowImageListener {
 
     override fun onShowImageUrls() {
 
-        if (isLoading) return
+        if (isLoading) {
+            Toast.makeText(requireContext(), "loadding...", Toast.LENGTH_SHORT).show()
+            return
+        }
 
         isLoading = true
 
@@ -282,6 +299,7 @@ class PhotoFragment : Fragment(), OnShowImageListener {
                 })
         } else {
 
+            //TODO need synchronize?
             var indexCount = 0
             val uriMap = mutableMapOf<Int, Uri>()
 
@@ -318,9 +336,10 @@ class PhotoFragment : Fragment(), OnShowImageListener {
                         }
 
                         override fun onCropFailure(t: Throwable) {
-                            //TODO java.lang.NullPointerException: CurrentImageRect is empty
                             Toast.makeText(requireContext(), t.message, Toast.LENGTH_LONG).show()
                             isLoading = false
+
+                            Timber.e("index : $index")
                             Timber.wtf(t)
                         }
                     })

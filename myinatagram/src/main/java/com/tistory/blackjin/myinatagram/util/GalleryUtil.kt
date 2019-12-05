@@ -87,7 +87,7 @@ internal object GalleryUtil {
     }
 
     private fun getAlbum(entry: Map.Entry<String, List<Media>>): Album {
-        Timber.e("${entry.key} -> ${entry.value}")
+        //Timber.e("${entry.key} -> ${entry.value}")
         return Album(entry.key, entry.value[0].uri, entry.value)
     }
 
@@ -102,7 +102,7 @@ internal object GalleryUtil {
                 val folderName = getString(getColumnIndex(albumName))
                 val mediaPath = getString(getColumnIndex(INDEX_MEDIA_URI))
                 val mediaUri: Uri = Uri.fromFile(File(mediaPath))
-                Timber.d("folderName : $folderName -> mediaUri : $mediaUri")
+                //Timber.d("folderName : $folderName -> mediaUri : $mediaUri")
                 val datedAddedSecond = getLong(getColumnIndex(INDEX_DATE_ADDED))
                 Media(folderName, mediaUri, datedAddedSecond)
             }

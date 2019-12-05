@@ -36,7 +36,7 @@ public class MyUCropView extends FrameLayout {
     }
 
     private void setListenersToViews() {
-        mGestureCropImageView.setCropBoundsChangeListener(cropRatio -> mViewOverlay.setTargetAspectRatio(cropRatio));
+        mGestureCropImageView.setCropBoundsChangeListener(mViewOverlay::setTargetAspectRatio);
         mViewOverlay.setOverlayViewChangeListener(cropRect -> mGestureCropImageView.setCropRect(cropRect));
     }
 

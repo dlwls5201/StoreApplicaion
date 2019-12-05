@@ -92,14 +92,20 @@ class MainActivity : AppCompatActivity() {
 
             val parent = RelativeLayout(this).apply {
                 layoutParams =
-                    LinearLayout.LayoutParams(600, ViewGroup.LayoutParams.MATCH_PARENT).apply {
+                    LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    ).apply {
                         setMargins(0, 0, 10, 0)
                     }
             }
 
             val imageView = ImageView(this).apply {
                 layoutParams =
-                    RelativeLayout.LayoutParams(600, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                    RelativeLayout.LayoutParams(
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                    ).apply {
                         addRule(RelativeLayout.CENTER_IN_PARENT)
                     }
                 setImageBitmap(bitmap)
