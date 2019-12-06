@@ -100,12 +100,12 @@ internal class MediaAdapter : RecyclerView.Adapter<BaseViewHolder<ViewDataBindin
     fun setSingleSelectType() {
         this.selectType = SelectType.SINGLE
         selectedUriList.clear()
-        notifyDataSetChanged()
+        notifyItemRangeChanged(0, items.size)
     }
 
     fun setMultiSelectType(uri: Uri?) {
         this.selectType = SelectType.MULTI
-        notifyDataSetChanged()
+        notifyItemRangeChanged(0, items.size)
 
         //현재 보여지고 있는 uri를 추가해줍니다.
         if (uri != null) {

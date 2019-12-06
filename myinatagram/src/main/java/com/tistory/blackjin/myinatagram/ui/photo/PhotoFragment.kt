@@ -177,9 +177,11 @@ class PhotoFragment : Fragment(), OnShowImageListener {
 
     /**
      * TransformImageListener 가 onLoadComplete 를 호출 받고나서 다음 작업을 처리해야 합니다.
-     * -> 동기화 과정이 필요합니다.
+     * 즉 한번에 한번씩 작업을 실행해야 합니다.
      */
     private var isPreviewLoadComplete = true
+
+    private val maxImageSize = 1000
 
     private fun setUriToPreview(uri: Uri) {
 
@@ -195,8 +197,8 @@ class PhotoFragment : Fragment(), OnShowImageListener {
                 isScaleEnabled = true
                 isRotateEnabled = false
 
-                setMaxResultImageSizeX(1000)
-                setMaxResultImageSizeY(1000)
+                setMaxResultImageSizeX(maxImageSize)
+                setMaxResultImageSizeY(maxImageSize)
 
                 setTransformImageListener(object :
                     TransformImageView.TransformImageListener {
@@ -209,6 +211,7 @@ class PhotoFragment : Fragment(), OnShowImageListener {
                     }
 
                     override fun onLoadFailure(e: Exception) {
+                        isPreviewLoadComplete = true
                         Timber.wtf(e)
                     }
                 })
@@ -224,6 +227,7 @@ class PhotoFragment : Fragment(), OnShowImageListener {
         }
     }
 
+    //TODO 생선한 파일을 제거해야 합니다.
     private fun createImageFile(): File {
 
         // 이미지 파일 이름 ( blackJin_ )
@@ -232,6 +236,7 @@ class PhotoFragment : Fragment(), OnShowImageListener {
         // 이미지가 저장될 폴더
         val storageDir =
             File(requireContext().getExternalFilesDir(Environment.DIRECTORY_PICTURES)?.absolutePath)
+        Timber.d("imageFileName : $imageFileName")
 
         return File.createTempFile(imageFileName, ".jpg", storageDir)
     }
@@ -259,6 +264,14 @@ class PhotoFragment : Fragment(), OnShowImageListener {
     }
 
     private var isLoading = false
+
+    private var indexCount = 0
+
+    @Synchronized
+    private fun plusIndexCount() {
+        Timber.d("plusIndexCount : $indexCount")
+        indexCount++
+    }
 
     override fun onShowImageUrls() {
 
@@ -288,14 +301,11 @@ class PhotoFragment : Fragment(), OnShowImageListener {
                     }
 
                     override fun onCropFailure(t: Throwable) {
-                        Toast.makeText(requireContext(), t.message, Toast.LENGTH_LONG).show()
-                        isLoading = false
-                        Timber.wtf(t)
+                        finishForError(t)
                     }
                 })
         } else {
 
-            var indexCount = 0
             val uriMap = mutableMapOf<Int, Uri>()
 
             for ((index, value) in mGestureCropImageViewList.withIndex()) {
@@ -315,8 +325,9 @@ class PhotoFragment : Fragment(), OnShowImageListener {
 
                             uriMap[index] = resultUri
 
-                            indexCount++
+                            plusIndexCount()
 
+                            Timber.e("setResultUris $indexCount")
                             if (indexCount == mGestureCropImageViewList.size) {
 
                                 val uris = ArrayList<Uri>()
@@ -331,9 +342,8 @@ class PhotoFragment : Fragment(), OnShowImageListener {
                         }
 
                         override fun onCropFailure(t: Throwable) {
-                            Toast.makeText(requireContext(), t.message, Toast.LENGTH_LONG).show()
-                            isLoading = false
-                            Timber.wtf("index : $index -> $t")
+                            Timber.wtf("index : $index")
+                            finishForError(t)
                         }
                     })
             }
@@ -358,6 +368,12 @@ class PhotoFragment : Fragment(), OnShowImageListener {
             )
             finish()
         }
+    }
+
+    private fun finishForError(t: Throwable) {
+        Toast.makeText(requireContext(), t.message, Toast.LENGTH_LONG).show()
+        requireActivity().finish()
+        Timber.wtf(t)
     }
 
     companion object {
