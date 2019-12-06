@@ -183,6 +183,7 @@ class PhotoFragment : Fragment(), OnShowImageListener {
 
     private val maxImageSize = 1000
 
+    //TODO check out of memory
     private fun setUriToPreview(uri: Uri) {
 
         isPreviewLoadComplete = false
@@ -227,7 +228,6 @@ class PhotoFragment : Fragment(), OnShowImageListener {
         }
     }
 
-    //TODO 생선한 파일을 제거해야 합니다.
     private fun createImageFile(): File {
 
         // 이미지 파일 이름 ( blackJin_ )
@@ -351,6 +351,8 @@ class PhotoFragment : Fragment(), OnShowImageListener {
     }
 
     private fun setResultUri(uri: Uri) {
+        deleteZeroSizeBlackJinFile()
+
         with(requireActivity()) {
             setResult(
                 Activity.RESULT_OK, Intent()
@@ -361,12 +363,29 @@ class PhotoFragment : Fragment(), OnShowImageListener {
     }
 
     private fun setResultUris(uris: ArrayList<Uri>) {
+        deleteZeroSizeBlackJinFile()
+
         with(requireActivity()) {
             setResult(
                 Activity.RESULT_OK, Intent()
                     .putParcelableArrayListExtra(InstagramActivity.EXTRA_PHOTO_URI_LIST, uris)
             )
             finish()
+        }
+    }
+
+    //TODO check folder name
+    private fun deleteZeroSizeBlackJinFile() {
+        val path =
+            requireContext().getExternalFilesDir(Environment.DIRECTORY_PICTURES)?.absolutePath
+        val files = File(path).listFiles()
+
+        for (tempFile in files) {
+            if (tempFile.name.startsWith("blackJin")) {
+                if (tempFile.length() == 0L) {
+                    tempFile.delete()
+                }
+            }
         }
     }
 
