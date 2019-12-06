@@ -6,9 +6,9 @@ import androidx.databinding.BindingAdapter
 import com.bumptech.glide.Glide
 
 @BindingAdapter("imageUri")
-fun loadImage(imageView: ImageView, uri: Uri) {
-    Glide.with(imageView.context)
+fun ImageView.loadImage(uri: Uri) {
+    Glide.with(context)
         .load(uri)
         .thumbnail(0.1f)
-        .into(imageView)
+        .into(this)
 }

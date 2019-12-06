@@ -18,11 +18,10 @@ import androidx.recyclerview.widget.GridLayoutManager
 import com.tistory.blackjin.myinatagram.R
 import com.tistory.blackjin.myinatagram.adapter.GridSpacingItemDecoration
 import com.tistory.blackjin.myinatagram.adapter.MediaAdapter
-import com.tistory.blackjin.myinatagram.builder.type.MediaType
-import com.tistory.blackjin.myinatagram.builder.type.SelectType
 import com.tistory.blackjin.myinatagram.databinding.FragmentPhotoBinding
 import com.tistory.blackjin.myinatagram.model.Album
 import com.tistory.blackjin.myinatagram.model.Media
+import com.tistory.blackjin.myinatagram.type.MediaType
 import com.tistory.blackjin.myinatagram.ui.InstagramActivity
 import com.tistory.blackjin.myinatagram.ui.OnShowImageListener
 import com.tistory.blackjin.myinatagram.util.GalleryUtil
@@ -45,8 +44,6 @@ class PhotoFragment : Fragment(), OnShowImageListener {
     private val mGestureCropImageViewList = mutableListOf<GestureCropImageView>()
     private var mGestureCropImageView: GestureCropImageView? = null
     private var currentShowingUri: Uri? = null
-
-    private var selectType = SelectType.SINGLE
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -83,36 +80,30 @@ class PhotoFragment : Fragment(), OnShowImageListener {
 
         with(binding.ucrop) {
             layoutParams = ConstraintLayout.LayoutParams(deviceWidth, deviceWidth)
-            overlayView.apply { setPadding(0, 0, 0, 0) }
         }
     }
 
     private fun initButton() {
         with(binding.ivChangeSelect) {
             setOnClickListener {
-                if (selectType == SelectType.SINGLE) {
-                    selectType = SelectType.MULTI
+                if (mediaAdapter.isTypeSingle()) {
+                    mediaAdapter.setMultiSelectType(currentShowingUri)
                     setImageResource(R.drawable.ic_multi_select_on)
 
                     //마지막 크롭 이미지를 제외하고 전부 제거합니다.
-                    val size = mGestureCropImageViewList.size
-                    for (i in 0 until size - 1) {
-                        mGestureCropImageViewList.removeAt(0)
-                    }
+                    val lastItem = mGestureCropImageViewList.takeLast(1)
+                    mGestureCropImageViewList.clear()
+                    mGestureCropImageViewList.addAll(lastItem)
                 } else {
-                    selectType = SelectType.SINGLE
+                    mediaAdapter.setSingleSelectType()
                     setImageResource(R.drawable.ic_multi_select_off)
-                }
-
-                currentShowingUri?.let {
-                    mediaAdapter.toggleSingleAndMultiSelect(selectType, it)
                 }
             }
         }
     }
 
     private fun setupMediaRecyclerView() {
-        mediaAdapter = MediaAdapter(requireActivity()).apply {
+        mediaAdapter = MediaAdapter().apply {
             onItemClickListener = object : MediaAdapter.OnItemClickListener {
                 override fun onItemClick(data: Media) {
                     onMediaClick(data.uri)
@@ -129,14 +120,14 @@ class PhotoFragment : Fragment(), OnShowImageListener {
     }
 
     private fun onMediaClick(uri: Uri) {
-        when (selectType) {
-            SelectType.SINGLE -> onSingleMediaClick(uri)
-            SelectType.MULTI -> onMultiMediaClick(uri)
+        if (mediaAdapter.isTypeSingle()) {
+            onSingleMediaClick(uri)
+        } else {
+            onMultiMediaClick(uri)
         }
     }
 
     private fun onSingleMediaClick(uri: Uri) {
-
         if (currentShowingUri == uri) {
             return
         } else {
@@ -152,14 +143,14 @@ class PhotoFragment : Fragment(), OnShowImageListener {
 
         val index = mediaAdapter.getSelectedUriListIndex(uri)
 
-        if (index >= 0) {
+        if (index > -1) {
             //기존아이템 선택
             if (mGestureCropImageViewList.size > 1) {
 
-                //클릭한 제스터 삭제
+                //클릭한 이미지 삭제
                 mGestureCropImageViewList.removeAt(index)
 
-                //마지막 아이템의 제스터로 변경
+                //마지막 아이템의 이미지로 변경
                 val lastGestureCropImageView = mGestureCropImageViewList.last()
                 binding.ucrop.changeCropImageView(lastGestureCropImageView)
                 mediaAdapter.toggleMediaSelect(uri)
@@ -168,6 +159,8 @@ class PhotoFragment : Fragment(), OnShowImageListener {
             }
         } else {
             //새로운 아이템 선택
+
+            //아이템 갯수가 maxCount 를 초과한 경우
             if (mGestureCropImageViewList.size >= maxCount) {
                 Toast.makeText(requireContext(), maxCountMessage, Toast.LENGTH_LONG).show()
                 return
@@ -184,6 +177,7 @@ class PhotoFragment : Fragment(), OnShowImageListener {
 
     /**
      * TransformImageListener 가 onLoadComplete 를 호출 받고나서 다음 작업을 처리해야 합니다.
+     * -> 동기화 과정이 필요합니다.
      */
     private var isPreviewLoadComplete = true
 
@@ -278,7 +272,7 @@ class PhotoFragment : Fragment(), OnShowImageListener {
         val mCompressFormat = Bitmap.CompressFormat.JPEG
         val mCompressQuality = 90
 
-        if (selectType == SelectType.SINGLE) {
+        if (mediaAdapter.isTypeSingle()) {
             mGestureCropImageView?.cropAndSaveImage(
                 mCompressFormat,
                 mCompressQuality,
@@ -294,12 +288,13 @@ class PhotoFragment : Fragment(), OnShowImageListener {
                     }
 
                     override fun onCropFailure(t: Throwable) {
-                        Timber.e(t)
+                        Toast.makeText(requireContext(), t.message, Toast.LENGTH_LONG).show()
+                        isLoading = false
+                        Timber.wtf(t)
                     }
                 })
         } else {
 
-            //TODO need synchronize?
             var indexCount = 0
             val uriMap = mutableMapOf<Int, Uri>()
 
@@ -338,9 +333,7 @@ class PhotoFragment : Fragment(), OnShowImageListener {
                         override fun onCropFailure(t: Throwable) {
                             Toast.makeText(requireContext(), t.message, Toast.LENGTH_LONG).show()
                             isLoading = false
-
-                            Timber.e("index : $index")
-                            Timber.wtf(t)
+                            Timber.wtf("index : $index -> $t")
                         }
                     })
             }

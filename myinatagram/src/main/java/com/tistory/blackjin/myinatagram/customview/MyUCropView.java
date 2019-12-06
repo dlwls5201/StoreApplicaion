@@ -27,11 +27,14 @@ public class MyUCropView extends FrameLayout {
         mGestureCropImageView = findViewById(R.id.image_view_crop);
         mViewOverlay = findViewById(R.id.view_overlay);
 
+        //크롭시 표시되는 안내선 없애기
         //TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.ucrop_UCropView);
         //mViewOverlay.processStyledAttributes(a);
         //mGestureCropImageView.processStyledAttributes(a);
         //a.recycle();
 
+        //크롭 시 패딩 간역 없애기
+        mViewOverlay.setPadding(0, 0, 0, 0);
         setListenersToViews();
     }
 

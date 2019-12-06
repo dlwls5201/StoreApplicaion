@@ -1,4 +1,4 @@
-package com.tistory.blackjin.myinatagram.builder.type
+package com.tistory.blackjin.myinatagram.type
 
 internal enum class MediaType {
     IMAGE,

@@ -5,9 +5,9 @@ import android.database.Cursor
 import android.net.Uri
 import android.provider.MediaStore
 import com.tistory.blackjin.myinatagram.R
-import com.tistory.blackjin.myinatagram.builder.type.MediaType
 import com.tistory.blackjin.myinatagram.model.Album
 import com.tistory.blackjin.myinatagram.model.Media
+import com.tistory.blackjin.myinatagram.type.MediaType
 import io.reactivex.Single
 import timber.log.Timber
 import java.io.File

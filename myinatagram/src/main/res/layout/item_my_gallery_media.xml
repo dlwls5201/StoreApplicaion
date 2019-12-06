@@ -6,7 +6,7 @@
 
     <data>
 
-        <import type="com.tistory.blackjin.myinatagram.builder.type.SelectType" />
+        <import type="com.tistory.blackjin.myinatagram.type.SelectType" />
 
         <import type="android.view.View" />
 
