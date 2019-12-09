@@ -41,9 +41,8 @@ class PhotoFragment : Fragment(), OnShowImageListener {
 
     private var disposable: Disposable? = null
 
-    //mGestureCropImageViewList 에 너무 많은 GestureCropImageView 를 add 하게 되면 oom 이 발생합니다.
+    //GestureCropImageView를 너무 많이 저장하게 되면 OOM이 발생합니다.
     private val mGestureCropImageViewList = mutableListOf<GestureCropImageView>()
-    private var mGestureCropImageView: GestureCropImageView? = null
     private var currentShowingUri: Uri? = null
 
     override fun onCreateView(
@@ -69,7 +68,6 @@ class PhotoFragment : Fragment(), OnShowImageListener {
 
     override fun onStop() {
         disposable?.dispose()
-        mGestureCropImageView?.cancelAllAnimations()
         super.onStop()
     }
 
@@ -88,15 +86,15 @@ class PhotoFragment : Fragment(), OnShowImageListener {
         with(binding.ivChangeSelect) {
             setOnClickListener {
                 if (mediaAdapter.isTypeSingle()) {
-                    mediaAdapter.setMultiSelectType(currentShowingUri)
+                    mediaAdapter.setMultiSelectType()
+                    currentShowingUri?.let {
+                        mediaAdapter.toggleMediaSelect(it)
+                    }
                     setImageResource(R.drawable.ic_multi_select_on)
 
                     //현재 보여지고 있는 크롭 이미지를 제외하고 전부 제거합니다.
                     mGestureCropImageViewList.clear()
-                    mGestureCropImageView?.let {
-                        mGestureCropImageViewList.add(it)
-                    } ?: error("mGestureCropImageView is null")
-
+                    mGestureCropImageViewList.add(binding.ucrop.cropImageView)
                 } else {
                     mediaAdapter.setSingleSelectType()
                     setImageResource(R.drawable.ic_multi_select_off)
@@ -146,7 +144,6 @@ class PhotoFragment : Fragment(), OnShowImageListener {
 
         val index = mediaAdapter.getSelectedUriListIndex(uri)
 
-
         if (index > -1) {
             //기존아이템 선택
             if (mGestureCropImageViewList.size > 1) {
@@ -178,10 +175,9 @@ class PhotoFragment : Fragment(), OnShowImageListener {
 
     }
 
-    /**
-     * TransformImageListener 가 onLoadComplete 를 호출 받고나서 다음 작업을 처리해야 합니다.
-     * 즉 한번에 한번씩 작업을 실행해야 합니다.
-     */
+
+    //TransformImageListener가 onLoadComplete를 호출 받고나서 다음 작업을 처리해야 합니다.
+    //즉 한번에 한번씩 작업을 실행해야 합니다.
     private var isPreviewLoadComplete = true
 
     private val maxImageSize = 1000
@@ -193,7 +189,7 @@ class PhotoFragment : Fragment(), OnShowImageListener {
         with(binding.ucrop) {
             resetCropImageView()
 
-            mGestureCropImageView = cropImageView.apply {
+            with(cropImageView) {
 
                 targetAspectRatio = 1f
 
@@ -224,12 +220,12 @@ class PhotoFragment : Fragment(), OnShowImageListener {
         val tempFile = createImageFile()
         val outputUri = Uri.fromFile(tempFile)
 
-        mGestureCropImageView?.let {
+        binding.ucrop.cropImageView.let {
             it.setImageUri(uri, outputUri)
             if (!mediaAdapter.isTypeSingle()) {
                 mGestureCropImageViewList.add(it)
             }
-        } ?: error("mGestureCropImageView is null")
+        }
     }
 
     private fun createImageFile(): File {
@@ -290,7 +286,7 @@ class PhotoFragment : Fragment(), OnShowImageListener {
         val mCompressQuality = 90
 
         if (mediaAdapter.isTypeSingle()) {
-            mGestureCropImageView?.cropAndSaveImage(
+            binding.ucrop.cropImageView.cropAndSaveImage(
                 mCompressFormat,
                 mCompressQuality,
                 object : BitmapCropCallback {
@@ -307,7 +303,7 @@ class PhotoFragment : Fragment(), OnShowImageListener {
                     override fun onCropFailure(t: Throwable) {
                         finishForError(t)
                     }
-                }) ?: error("mGestureCropImageView is null")
+                })
         } else {
 
             val uriMap = mutableMapOf<Int, Uri>()
@@ -332,7 +328,6 @@ class PhotoFragment : Fragment(), OnShowImageListener {
                             plusIndexCount()
 
                             //indexCount 를 확인해 마지막 스레드에서 uri 순서를 정렬한 후 작업한다.
-                            Timber.e("setResultUris $indexCount")
                             if (indexCount == mGestureCropImageViewList.size) {
 
                                 val uris = ArrayList<Uri>()
@@ -381,7 +376,7 @@ class PhotoFragment : Fragment(), OnShowImageListener {
     }
 
     //onBitmapCropped 함수가 모두 동작된 후 마지막에 해당 함수를 실행해야합니다.
-    //그렇지 않으면 크롭된 이미지가 들어가야할 임시 파일을 미리 제거하거 됩니다.
+    //그렇지 않으면 크롭된 이미지가 들어가야할 임시 파일을 미리 제거하게 됩니다.
     private fun deleteZeroSizeBlackJinFile() {
         val path =
             requireContext().getExternalFilesDir(Environment.DIRECTORY_PICTURES)?.absolutePath

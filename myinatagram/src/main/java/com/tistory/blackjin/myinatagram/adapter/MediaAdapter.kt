@@ -103,14 +103,9 @@ internal class MediaAdapter : RecyclerView.Adapter<BaseViewHolder<ViewDataBindin
         notifyItemRangeChanged(0, items.size)
     }
 
-    fun setMultiSelectType(uri: Uri?) {
+    fun setMultiSelectType() {
         this.selectType = SelectType.MULTI
         notifyItemRangeChanged(0, items.size)
-
-        //현재 보여지고 있는 uri를 추가해줍니다.
-        if (uri != null) {
-            toggleMediaSelect(uri)
-        }
     }
 
     fun replaceAll(items: List<Media>, useDiffCallback: Boolean = false) {
