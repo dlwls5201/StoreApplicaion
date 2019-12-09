@@ -41,7 +41,7 @@ class PhotoFragment : Fragment(), OnShowImageListener {
 
     private var disposable: Disposable? = null
 
-    //GestureCropImageView를 너무 많이 저장하게 되면 OOM이 발생합니다.
+    //GestureCropImageView 를 너무 많이 저장하게 되면 OOM 이 발생합니다.
     private val mGestureCropImageViewList = mutableListOf<GestureCropImageView>()
     private var currentShowingUri: Uri? = null
 
@@ -132,7 +132,6 @@ class PhotoFragment : Fragment(), OnShowImageListener {
         if (currentShowingUri == uri) {
             return
         } else {
-            currentShowingUri = uri
             setUriToPreview(uri)
         }
     }
@@ -151,10 +150,11 @@ class PhotoFragment : Fragment(), OnShowImageListener {
                 //클릭한 이미지 삭제
                 mGestureCropImageViewList.removeAt(index)
 
-                //마지막 아이템의 이미지로 변경
+                //마지막 아이템의 이미지로 설정
                 val lastGestureCropImageView = mGestureCropImageViewList.last()
                 binding.ucrop.changeCropImageView(lastGestureCropImageView)
                 mediaAdapter.toggleMediaSelect(uri)
+                currentShowingUri = uri
             } else {
                 Timber.d("only selected one item")
             }
@@ -166,64 +166,63 @@ class PhotoFragment : Fragment(), OnShowImageListener {
                 return
             }
 
-            if (isPreviewLoadComplete) {
-                currentShowingUri = uri
-                setUriToPreview(uri)
-                mediaAdapter.toggleMediaSelect(uri)
-            }
+            setUriToPreview(uri)
         }
-
     }
 
-
-    //TransformImageListener가 onLoadComplete를 호출 받고나서 다음 작업을 처리해야 합니다.
+    //TransformImageListener 가 onLoadComplete 를 호출 받고나서 다음 작업을 처리해야 합니다.
     //즉 한번에 한번씩 작업을 실행해야 합니다.
     private var isPreviewLoadComplete = true
-
     private val maxImageSize = 1000
 
     private fun setUriToPreview(uri: Uri) {
 
-        isPreviewLoadComplete = false
+        if (isPreviewLoadComplete) {
+            isPreviewLoadComplete = false
 
-        with(binding.ucrop) {
-            resetCropImageView()
+            with(binding.ucrop) {
+                resetCropImageView()
 
-            with(cropImageView) {
+                with(cropImageView) {
 
-                targetAspectRatio = 1f
+                    targetAspectRatio = 1f
 
-                isScaleEnabled = true
-                isRotateEnabled = false
+                    isScaleEnabled = true
+                    isRotateEnabled = false
 
-                setMaxResultImageSizeX(maxImageSize)
-                setMaxResultImageSizeY(maxImageSize)
+                    setMaxResultImageSizeX(maxImageSize)
+                    setMaxResultImageSizeY(maxImageSize)
 
-                setTransformImageListener(object :
-                    TransformImageView.TransformImageListener {
-                    override fun onRotate(currentAngle: Float) {}
+                    setTransformImageListener(object :
+                        TransformImageView.TransformImageListener {
+                        override fun onRotate(currentAngle: Float) {}
 
-                    override fun onScale(currentScale: Float) {}
+                        override fun onScale(currentScale: Float) {}
 
-                    override fun onLoadComplete() {
-                        isPreviewLoadComplete = true
-                    }
+                        override fun onLoadComplete() {
+                            isPreviewLoadComplete = true
+                        }
 
-                    override fun onLoadFailure(e: Exception) {
-                        isPreviewLoadComplete = true
-                        Timber.wtf(e)
-                    }
-                })
+                        override fun onLoadFailure(e: Exception) {
+                            isPreviewLoadComplete = true
+                            Timber.wtf(e)
+                        }
+                    })
+                }
             }
-        }
 
-        val tempFile = createImageFile()
-        val outputUri = Uri.fromFile(tempFile)
+            val tempFile = createImageFile()
+            val outputUri = Uri.fromFile(tempFile)
 
-        binding.ucrop.cropImageView.let {
-            it.setImageUri(uri, outputUri)
-            if (!mediaAdapter.isTypeSingle()) {
-                mGestureCropImageViewList.add(it)
+            currentShowingUri = uri
+
+            binding.ucrop.cropImageView.let {
+                it.setImageUri(uri, outputUri)
+
+                if (!mediaAdapter.isTypeSingle()) {
+                    mGestureCropImageViewList.add(it)
+                    mediaAdapter.toggleMediaSelect(uri)
+                }
             }
         }
     }
