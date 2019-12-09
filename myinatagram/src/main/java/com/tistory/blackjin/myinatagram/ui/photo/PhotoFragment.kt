@@ -327,6 +327,7 @@ class PhotoFragment : Fragment(), OnShowImageListener {
 
                             plusIndexCount()
 
+                            //indexCount 를 확인해 마지막 스레드에서 uri 순서를 정렬한 후 작업한다.
                             Timber.e("setResultUris $indexCount")
                             if (indexCount == mGestureCropImageViewList.size) {
 
