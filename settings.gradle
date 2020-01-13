@@ -1,2 +1,2 @@
-include ':app', ':myinatagram'
+include ':app'
 rootProject.name='StoreApplicaion'

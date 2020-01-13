@@ -52,7 +52,7 @@ class StoreActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_instagram)
+        setContentView(R.layout.activity_main)
 
         innerStoreExample()
         chkPermission()
