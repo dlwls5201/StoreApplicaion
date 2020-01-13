@@ -2,14 +2,12 @@ package com.tistory.blackjin.storeapplicaion
 
 import android.Manifest
 import android.app.Activity
-import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
 import android.net.Uri
-import android.opengl.GLES30
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
@@ -18,15 +16,13 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
-import androidx.core.graphics.scale
 import kotlinx.android.synthetic.main.activity_main.*
 import timber.log.Timber
 import java.io.*
-import java.lang.Exception
 import java.text.SimpleDateFormat
 import java.util.*
 
-class MainActivity : AppCompatActivity() {
+class StoreActivity : AppCompatActivity() {
 
     private var tempFile: File? = null
 
@@ -191,15 +187,15 @@ class MainActivity : AppCompatActivity() {
     // 메모리보다 사진 사이즈가 크다면 -> OpenGLRenderer: Bitmap too large to be uploaded into a texture (4160x2340, max=4096x4096)
     // https://yollo.tistory.com/12
     private fun setBitmap(bitmap: Bitmap?) {
-        if(bitmap != null) {
+        /*if (bitmap != null) {
 
-            if(bitmap.width > GLES30.GL_MAX_TEXTURE_SIZE || bitmap.height > GLES30.GL_MAX_TEXTURE_SIZE) {
+            if (bitmap.width > GLES30.GL_MAX_TEXTURE_SIZE || bitmap.height > GLES30.GL_MAX_TEXTURE_SIZE) {
                 imageView.setImageBitmap(bitmap.scale(1024, 1024))
             } else {
                 imageView.setImageBitmap(bitmap)
             }
 
-        }
+        }*/
 
     }
 
