@@ -4,20 +4,12 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <HorizontalScrollView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-
-        <LinearLayout
-            android:id="@+id/llImageParent"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:background="@color/black_20"
-            android:gravity="center"
-            android:orientation="horizontal" />
-
-    </HorizontalScrollView>
-
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="300dp"
+        android:layout_height="300dp"
+        android:layout_centerInParent="true"
+        android:background="@android:color/darker_gray" />
 
     <LinearLayout
         android:layout_width="wrap_content"
@@ -40,11 +32,5 @@
             android:text="Camera" />
 
     </LinearLayout>
-
-    <TextView
-        android:id="@+id/textView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true" />
 
 </RelativeLayout>

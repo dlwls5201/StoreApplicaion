@@ -20,10 +20,6 @@ allprojects {
     repositories {
         google()
         jcenter()
-
-        //for PhotoFilter sdk
-        //https://github.com/Yalantis/uCrop
-        maven { url "https://jitpack.io" }
     }
 }
 

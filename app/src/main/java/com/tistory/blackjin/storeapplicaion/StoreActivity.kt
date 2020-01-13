@@ -8,6 +8,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
 import android.net.Uri
+import android.opengl.GLES30
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
@@ -16,7 +17,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
-import kotlinx.android.synthetic.main.activity_main.*
+import androidx.core.graphics.scale
+import kotlinx.android.synthetic.main.activity_store.*
 import timber.log.Timber
 import java.io.*
 import java.text.SimpleDateFormat
@@ -52,7 +54,7 @@ class StoreActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        setContentView(R.layout.activity_store)
 
         innerStoreExample()
         chkPermission()
@@ -187,7 +189,7 @@ class StoreActivity : AppCompatActivity() {
     // 메모리보다 사진 사이즈가 크다면 -> OpenGLRenderer: Bitmap too large to be uploaded into a texture (4160x2340, max=4096x4096)
     // https://yollo.tistory.com/12
     private fun setBitmap(bitmap: Bitmap?) {
-        /*if (bitmap != null) {
+        if (bitmap != null) {
 
             if (bitmap.width > GLES30.GL_MAX_TEXTURE_SIZE || bitmap.height > GLES30.GL_MAX_TEXTURE_SIZE) {
                 imageView.setImageBitmap(bitmap.scale(1024, 1024))
@@ -195,7 +197,7 @@ class StoreActivity : AppCompatActivity() {
                 imageView.setImageBitmap(bitmap)
             }
 
-        }*/
+        }
 
     }
 
