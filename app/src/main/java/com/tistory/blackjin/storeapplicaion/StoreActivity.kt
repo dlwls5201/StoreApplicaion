@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.database.Cursor
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
@@ -28,35 +29,12 @@ class StoreActivity : AppCompatActivity() {
 
     private var tempFile: File? = null
 
-    private val permissionCheckCamera by lazy {
-        ContextCompat.checkSelfPermission(
-            this,
-            Manifest.permission.CAMERA
-        )
-    }
-
-    /**
-     * WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE
-     * 둘 중 하나만 받으면 적용 됩니다.
-     */
-    private val permissionCheckWrite by lazy {
-        ContextCompat.checkSelfPermission(
-            this,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE
-        )
-    }
-    private val permissionCheckRead by lazy {
-        ContextCompat.checkSelfPermission(
-            this,
-            Manifest.permission.READ_EXTERNAL_STORAGE
-        )
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_store)
 
         innerStoreExample()
+
         chkPermission()
 
         btnGallery.setOnClickListener {
@@ -105,6 +83,8 @@ class StoreActivity : AppCompatActivity() {
 
             intent?.data?.let { photoUri ->
 
+                Timber.d("onActivityResult photoUri : $photoUri")
+
                 /**
                  * 읽기 권한이 없어도 동작됩니다.
                  */
@@ -114,7 +94,7 @@ class StoreActivity : AppCompatActivity() {
                      * 하드웨어 가속이 필요
                      * java.lang.IllegalArgumentException: Software rendering doesn't support hardware bitmaps
                      */
-                    val source = ImageDecoder.createSource(this.contentResolver, photoUri)
+                    val source = ImageDecoder.createSource(contentResolver, photoUri)
                     ImageDecoder.decodeBitmap(source)
                 } else {
                     contentResolver.openInputStream(photoUri)?.use { inputStream ->
@@ -139,7 +119,7 @@ class StoreActivity : AppCompatActivity() {
                  *  uri 경로 -> content://media/external/images/media/...
                  *  절대 경로 -> /storage/emulated/0/DCIM/Camera/...
                  */
-                val cursor = contentResolver.query(
+                /*val cursor = contentResolver.query(
                     photoUri, //content://scheme 방식의 원하는 데이터를 가져오기 위한 정해진 주소
                     null,
                     null,
@@ -168,25 +148,25 @@ class StoreActivity : AppCompatActivity() {
                         Timber.d("photoUri : $photoUri")
                         Timber.d("cursorUri : $path")
 
-                        /**
-                         * 읽기 권한이 없다면 Permission denied 에러가 발생합니다.
-                         * BitmapFactory: Unable to decode stream: java.io.FileNotFoundException: open failed: EACCES (Permission denied)
-                         */
+                        //읽기 권한이 없다면 Permission denied 에러가 발생합니다.v
+                        //BitmapFactory: Unable to decode stream: java.io.FileNotFoundException: open failed: EACCES (Permission denied)
                         setBitmap(BitmapFactory.decodeFile(path, null))
                     }
 
                     cursor.close()
-                }
+                }*/
             }
 
         } else if (requestCode == PICK_FROM_CAMERA) {
             //카메라 에서는 intent,data == null 입니다.
-
-            setBitmap(BitmapFactory.decodeFile(tempFile?.absolutePath))
+            setBitmap(
+                BitmapFactory.decodeFile(tempFile?.absolutePath)
+            )
         }
     }
 
-    // 메모리보다 사진 사이즈가 크다면 -> OpenGLRenderer: Bitmap too large to be uploaded into a texture (4160x2340, max=4096x4096)
+    // 메모리보다 사진 사이즈가 크다면
+    // OpenGLRenderer: Bitmap too large to be uploaded into a texture (4160x2340, max=4096x4096)
     // https://yollo.tistory.com/12
     private fun setBitmap(bitmap: Bitmap?) {
         if (bitmap != null) {
@@ -199,6 +179,33 @@ class StoreActivity : AppCompatActivity() {
 
         }
 
+    }
+
+    /**
+     * 카메라 권한
+     */
+    private val permissionCheckCamera by lazy {
+        ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.CAMERA
+        )
+    }
+
+    /**
+     * WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE
+     * 둘 중 하나만 받으면 적용 됩니다.
+     */
+    private val permissionCheckWrite by lazy {
+        ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
+        )
+    }
+    private val permissionCheckRead by lazy {
+        ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.READ_EXTERNAL_STORAGE
+        )
     }
 
     private fun chkPermission() {
@@ -217,6 +224,8 @@ class StoreActivity : AppCompatActivity() {
 
                 // 권한 있음
                 Timber.e("---- already have permission ----")
+                //makeFile()
+                getQuery()
 
             }
         }
@@ -239,17 +248,15 @@ class StoreActivity : AppCompatActivity() {
         intent.type = MediaStore.Images.Media.CONTENT_TYPE
         startActivityForResult(intent, PICK_FROM_ALBUM)*/
 
-        val intent = Intent(
-            Intent.ACTION_PICK,
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+        /*val intent = Intent(
+            Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI
         )
+        startActivityForResult(intent, PICK_FROM_ALBUM)*/
 
-        startActivityForResult(intent, PICK_FROM_ALBUM)
-
-//        val intent = Intent(Intent.ACTION_PICK)
-//        intent.type = "image/*"
-//        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
-//        startActivityForResult(Intent.createChooser(intent, "Select Picture"), PICK_FROM_ALBUM)
+        val intent = Intent(Intent.ACTION_PICK)
+        intent.type = "image/*"
+        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+        startActivityForResult(Intent.createChooser(intent, "Select Picture"), PICK_FROM_ALBUM)
     }
 
     private fun takePhoto() {
@@ -267,7 +274,7 @@ class StoreActivity : AppCompatActivity() {
                  */
                 val photoUri1 = Uri.fromFile(it)
 
-                //TODO 내부 저장소 저장시 여기서 에러가 나옵니다.
+                //내부 저장소에 저장시 여기서 에러가 나옵니다. -> java.lang.IllegalArgumentException:
                 val photoUri2 = FileProvider.getUriForFile(
                     this,
                     "${application.packageName}.provider",
@@ -307,16 +314,14 @@ class StoreActivity : AppCompatActivity() {
          *  > storage/self/primary/Android/data/{package} , sdcard/Android/data/{package} 같이 저장 - 한쪽 파일을 지우면 같이 제거
          *  > 앱 제거 시 둘다 삭제
          *
-         *  TODO 안드로이드 Q 버전 부터는 외부저장소인 경우 다르게 적용해 주어야 합니다.
-         *  //https://proandroiddev.com/working-with-scoped-storage-8a7e7cafea3
+         *  외부저장소인 경우에는 권한이 필요하다.(외부 저장소에 파일을 생성할 경우 안드로이드Q 이상에서는 권한이 있어도 에러가 발생합니다.)
          *
-         *  외부저장소인 경우에는 권한이 필요하다.
          *  외부 저장소 : Environment.getExternalStorageDirectory()
          *  > storage/self/primary , sdcard 같이 저장  - 한쪽 파일을 지우면 같이 제거
          */
         //val path = cacheDir.absolutePath
-        val path = getExternalFilesDir(Environment.DIRECTORY_PICTURES)?.absolutePath
-        //val path = Environment.getExternalStorageDirectory().absolutePath
+        //val path = getExternalFilesDir(Environment.DIRECTORY_PICTURES)?.absolutePath
+        val path = Environment.getExternalStorageDirectory().absolutePath
 
         val storageDir = File(path)
 
@@ -382,12 +387,23 @@ class StoreActivity : AppCompatActivity() {
                 Environment.DIRECTORY_PICTURES
             )}"
         )
+    }
+
+    private val INDEX_MEDIA_URI = MediaStore.MediaColumns.DATA
+    private val INDEX_DATE_ADDED = MediaStore.MediaColumns.DATE_ADDED
+
+    private val albumName: String = MediaStore.Images.Media.BUCKET_DISPLAY_NAME
+
+    private fun makeFile() {
 
         //Device File Explorer 통해 정보를 확인할 수 있다.
         Timber.e("--내부 저장소 쓰기--")
         val fileName = "blackJin"
 
-        val innerDir = File(filesDir.absolutePath)
+        /**
+         *  외부 저장소에 파일을 생성할 경우 안드로이드Q 이상에서는 권한이 있어도 에러가 발생합니다.
+         */
+        val innerDir = File(Environment.getExternalStorageDirectory().absolutePath)
 
         val innerFile = File.createTempFile(fileName, ".txt", innerDir)
 
@@ -411,4 +427,59 @@ class StoreActivity : AppCompatActivity() {
         reader.close()
         `is`.close()
     }
+
+    private fun getQuery() {
+
+        val uri: Uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+
+        /*uri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+        albumName = MediaStore.Video.Media.BUCKET_DISPLAY_NAME*/
+
+        val sortOrder = "$INDEX_DATE_ADDED DESC"
+        val projection = arrayOf(INDEX_MEDIA_URI, albumName, INDEX_DATE_ADDED)
+
+        //requires android.permission.READ_EXTERNAL_STORAGE
+        val cursor = contentResolver.query(uri, projection, null, null, sortOrder)
+
+        val albumList = cursor?.let {
+            Timber.d(Arrays.toString(it.columnNames))
+
+            val list = generateSequence { if (cursor.moveToNext()) cursor else null }
+                .map(::getImage)
+                .filterNotNull()
+                .toList()
+
+        }
+
+        cursor?.close()
+    }
+
+    /**
+     *  @mediaPath : /storage/emulated/0/DCIM/..
+     *  @mediaUri : file:///storage/emulated/0/...
+     */
+    private fun getImage(cursor: Cursor) =
+        try {
+            cursor.run {
+                val folderName = getString(getColumnIndex(albumName))
+                val mediaPath = getString(getColumnIndex(INDEX_MEDIA_URI))
+                val mediaUri: Uri = Uri.fromFile(File(mediaPath))
+                val datedAddedSecond = getLong(getColumnIndex(INDEX_DATE_ADDED))
+
+                //매우 위험한 코드이다. 갤러리에 있는 모든 사진을 삭제해 버린다.
+                //안드로이드 Q 에서는 실행은 되나 실제로 파일은 지워지지 않는다... 에러도 없다...?? 어렵다....
+                /*val file = File(mediaPath)
+                if(file.exists()) {
+                    Timber.e("delete")
+                    file.delete()
+                }*/
+
+                Timber.d("folderName : $folderName , mediaPath : $mediaPath , mediaUri : $mediaUri")
+            }
+        } catch (exception: Exception) {
+            exception.printStackTrace()
+            null
+        }
+
+
 }

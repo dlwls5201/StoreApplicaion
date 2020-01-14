@@ -18,6 +18,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+        <!-- requestLegacyExternalStorage : This attribute is "false" by default on apps targetingAndroid 10 or higher. -->
 
         <activity android:name=".StoreActivity">
             <intent-filter>
