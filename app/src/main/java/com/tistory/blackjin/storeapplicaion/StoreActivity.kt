@@ -111,50 +111,6 @@ class StoreActivity : AppCompatActivity() {
                 setBitmap(selectedImage)
 
                 return
-
-                /**
-                 * 컨텐트 URI : 데이터 프로파이더 안에 있는 데이터를 정의한다.
-                 * 컨텐트 URI는 프로바이더에 해당하는 고유한 이름을 가지고 있는데, 이것을 권환이라 하고, 테이블을 나타내는 경로로 이루어져 있다.
-                 *
-                 *  uri 경로 -> content://media/external/images/media/...
-                 *  절대 경로 -> /storage/emulated/0/DCIM/Camera/...
-                 */
-                /*val cursor = contentResolver.query(
-                    photoUri, //content://scheme 방식의 원하는 데이터를 가져오기 위한 정해진 주소
-                    null,
-                    null,
-                    null,
-                    null
-                )
-
-                if (cursor != null) {
-
-                    //커서에 데이터가 들어 있는지 확인합니다.
-                    if (cursor.count > 0) {
-
-                        Timber.d("필드명 : ${Arrays.toString(cursor.columnNames)}")
-                        Timber.d("행의 갯수 : ${cursor.count}")
-
-                        //커서를 처음 위치로 이동시킴
-                        cursor.moveToFirst()
-
-                        //컬럼 인덱스를 가져옴
-                        val columnIndex = cursor.getColumnIndex(MediaStore.Images.Media.DATA)
-                        Timber.d("columnIndex : $columnIndex")
-
-                        //외부저장소 경로를 가져옴
-                        val path = cursor.getString(columnIndex)
-
-                        Timber.d("photoUri : $photoUri")
-                        Timber.d("cursorUri : $path")
-
-                        //읽기 권한이 없다면 Permission denied 에러가 발생합니다.v
-                        //BitmapFactory: Unable to decode stream: java.io.FileNotFoundException: open failed: EACCES (Permission denied)
-                        setBitmap(BitmapFactory.decodeFile(path, null))
-                    }
-
-                    cursor.close()
-                }*/
             }
 
         } else if (requestCode == PICK_FROM_CAMERA) {
@@ -454,10 +410,6 @@ class StoreActivity : AppCompatActivity() {
         cursor?.close()
     }
 
-    /**
-     *  @mediaPath : /storage/emulated/0/DCIM/..
-     *  @mediaUri : file:///storage/emulated/0/...
-     */
     private fun getImage(cursor: Cursor) =
         try {
             cursor.run {
