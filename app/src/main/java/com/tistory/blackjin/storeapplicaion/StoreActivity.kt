@@ -2,6 +2,8 @@ package com.tistory.blackjin.storeapplicaion
 
 import android.Manifest
 import android.app.Activity
+import android.app.RecoverableSecurityException
+import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.database.Cursor
@@ -13,12 +15,14 @@ import android.opengl.GLES30
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.os.SystemClock
 import android.provider.MediaStore
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.graphics.scale
+import com.bumptech.glide.Glide
 import kotlinx.android.synthetic.main.activity_store.*
 import timber.log.Timber
 import java.io.*
@@ -222,12 +226,27 @@ class StoreActivity : AppCompatActivity() {
         tempFile = createImageFile()
 
         tempFile?.let {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+
+                val fileUri = Uri.fromFile(it)
+                val fileUri2 = FileProvider.getUriForFile(
+                this,
+                "${application.packageName}.provider",
+                    it
+                )
 
                 /**
-                 * photoUri1 ->  file:///storage/emulated/0/Android/data/{packageName}/files/Pictures/blackJin/.. 경로가 나옴
-                 * photoUri2 ->  content://{Manifest 에서 설정한 provider 정보}/Android/data/{packageName}/files/Pictures/blackJin/.. 경로가 나옴
+                 * fileUri -> file:///content%3A/media/external_primary/images/media/53
+                 * fileUri2 ->
                  */
+                Timber.d("Q -> fileUri : $fileUri")
+                Timber.d("Q -> fileUri2 : $fileUri2")
+
+                intent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri2)
+                startActivityForResult(intent, PICK_FROM_CAMERA)
+
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+
                 val photoUri1 = Uri.fromFile(it)
 
                 //내부 저장소에 저장시 여기서 에러가 나옵니다. -> java.lang.IllegalArgumentException:
@@ -237,6 +256,10 @@ class StoreActivity : AppCompatActivity() {
                     it
                 )
 
+                /**
+                 * photoUri1 ->  file:///storage/emulated/0/Android/data/{packageName}/files/Pictures/blackJin/.. 경로가 나옴
+                 * photoUri2 ->  content://{Manifest 에서 설정한 provider 정보}/Android/data/{packageName}/files/Pictures/blackJin/.. 경로가 나옴
+                 */
                 Timber.d("photoUri1 : $photoUri1")
                 Timber.d("photoUri2 : $photoUri2")
 
@@ -275,26 +298,69 @@ class StoreActivity : AppCompatActivity() {
          *  외부 저장소 : Environment.getExternalStorageDirectory()
          *  > storage/self/primary , sdcard 같이 저장  - 한쪽 파일을 지우면 같이 제거
          */
-        //val path = cacheDir.absolutePath
-        //val path = getExternalFilesDir(Environment.DIRECTORY_PICTURES)?.absolutePath
-        val path = Environment.getExternalStorageDirectory().absolutePath
+        if(Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+            //val path = cacheDir.absolutePath
+            val path = getExternalFilesDir(Environment.DIRECTORY_PICTURES)?.absolutePath
+            //val path = Environment.getExternalStorageDirectory().absolutePath
 
-        val storageDir = File(path)
+            val storageDir = File(path)
 
-        if (!storageDir.exists()) {
-            storageDir.mkdirs()
+            if (!storageDir.exists()) {
+                storageDir.mkdirs()
+            }
+            Timber.d("path 경로 : $path")
+
+            try {
+                val tempFile = File.createTempFile(imageFileName, ".jpg", storageDir)
+                Timber.d("createImageFile 경로 : ${tempFile.absolutePath}")
+
+                return tempFile
+
+            } catch (e: IOException) {
+                e.printStackTrace()
+            }
+
+        } else {
+
+            //Android Q
+
+            val values = ContentValues().apply {
+
+                //put(MediaStore.Audio.Media.RELATIVE_PATH, "DCIM/BlackJin")
+
+                val fileName = "BlackJin-${SystemClock.currentThreadTimeMillis()}.jpg"
+                Timber.d("fileName : $fileName")
+
+                put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
+                put(MediaStore.Images.Media.MIME_TYPE, "image/jpg")
+
+                //iS_PENDING 속성을 1로 해주는 것은 파일을 write 할 때 까지 다른 곳에서 사용 못하게 하는 것입니다.
+                //파일을 모두 write 한 에 이 속성을 0으로 update 해주어야 합니다.
+                put(MediaStore.Images.Media.IS_PENDING, 1)
+            }
+
+            val collection = MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+
+            //데이터를 읽을 때는 READ_EXTERNAL_STORAGE 권한을 필요로 합나다.
+            //content://media/external_primary/images/media/47 리턴 받습니다.
+            val item: Uri? = contentResolver.insert(collection, values)
+            Timber.d("item uri : $item")
+
+            //TODO Unable to decode stream: java.lang.NullPointerException 에러로 바로 취소 됩니다.
+            intent.putExtra(MediaStore.EXTRA_OUTPUT, item)
+            startActivityForResult(intent, PICK_FROM_CAMERA)
+
+            /*item?.let {
+                val tempFile = File(it.toString())
+                Timber.d("tempFile : ${tempFile.absolutePath}")
+                return tempFile
+            }
+
+
+            Timber.d("item uri : $item")*/
+
         }
-        Timber.d("path 경로 : $path")
 
-        try {
-            val tempFile = File.createTempFile(imageFileName, ".jpg", storageDir)
-            Timber.d("createImageFile 경로 : ${tempFile.absolutePath}")
-
-            return tempFile
-
-        } catch (e: IOException) {
-            e.printStackTrace()
-        }
 
         return null
     }
@@ -316,7 +382,9 @@ class StoreActivity : AppCompatActivity() {
          *  <앱 삭제시 제거 됨>
          */
         Timber.e("--내부 저장소--")
+        ///data/user/0/com.tistory.blackjin.storeapplicaion/files
         Timber.d("getFileDir : ${filesDir.absolutePath}")
+        ///data/user/0/com.tistory.blackjin.storeapplicaion/cache
         Timber.d("getCacheDir : ${cacheDir.absolutePath}")
 
         /**
@@ -328,7 +396,9 @@ class StoreActivity : AppCompatActivity() {
          *  <앱 삭제시 제거 됨>
          */
         Timber.e("--외부 앱 전용 공간--")
+        ///storage/emulated/0/Android/data/com.tistory.blackjin.storeapplicaion/cache
         Timber.d("getExternalCacheDir : ${externalCacheDir?.absolutePath}")
+        ///storage/emulated/0/Android/data/com.tistory.blackjin.storeapplicaion/files/Pictures
         Timber.d("getExternalFilesDir : ${getExternalFilesDir(Environment.DIRECTORY_PICTURES)?.absolutePath}")
 
         /**
@@ -337,16 +407,15 @@ class StoreActivity : AppCompatActivity() {
          * <저장소에 남음>
          */
         Timber.e("--외부 저장소--")
+        ///storage/emulated/0
         Timber.d("getExternalStorageDirectory1 : ${Environment.getExternalStorageDirectory()}")
+        //storage/emulated/0/Pictures
         Timber.d(
             "getExternalStorageDirectory2 : ${Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_PICTURES
             )}"
         )
     }
-
-    private val INDEX_MEDIA_URI = MediaStore.MediaColumns.DATA
-    private val INDEX_DATE_ADDED = MediaStore.MediaColumns.DATE_ADDED
 
     private val albumName: String = MediaStore.Images.Media.BUCKET_DISPLAY_NAME
 
@@ -384,6 +453,9 @@ class StoreActivity : AppCompatActivity() {
         `is`.close()
     }
 
+    private val INDEX_MEDIA_URI = MediaStore.MediaColumns.DATA
+    private val INDEX_DATE_ADDED = MediaStore.MediaColumns.DATE_ADDED
+
     private fun getQuery() {
 
         val uri: Uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
@@ -391,8 +463,14 @@ class StoreActivity : AppCompatActivity() {
         /*uri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
         albumName = MediaStore.Video.Media.BUCKET_DISPLAY_NAME*/
 
+        //val projection = arrayOf(INDEX_MEDIA_URI, albumName, INDEX_DATE_ADDED)
+        val projection = arrayOf(
+            MediaStore.Images.Media._ID,
+            MediaStore.Images.Media.DISPLAY_NAME,
+            MediaStore.Images.Media.DATE_TAKEN
+        )
+
         val sortOrder = "$INDEX_DATE_ADDED DESC"
-        val projection = arrayOf(INDEX_MEDIA_URI, albumName, INDEX_DATE_ADDED)
 
         //requires android.permission.READ_EXTERNAL_STORAGE
         val cursor = contentResolver.query(uri, projection, null, null, sortOrder)
@@ -413,25 +491,58 @@ class StoreActivity : AppCompatActivity() {
     private fun getImage(cursor: Cursor) =
         try {
             cursor.run {
-                val folderName = getString(getColumnIndex(albumName))
-                val mediaPath = getString(getColumnIndex(INDEX_MEDIA_URI))
-                val mediaUri: Uri = Uri.fromFile(File(mediaPath))
-                val datedAddedSecond = getLong(getColumnIndex(INDEX_DATE_ADDED))
+                val idColumn = getColumnIndex(MediaStore.Images.Media._ID)
 
-                //매우 위험한 코드이다. 갤러리에 있는 모든 사진을 삭제해 버린다.
-                //안드로이드 Q 에서는 실행은 되나 실제로 파일은 지워지지 않는다... 에러도 없다...?? 어렵다....
-                /*val file = File(mediaPath)
-                if(file.exists()) {
-                    Timber.e("delete")
-                    file.delete()
-                }*/
+                val id = cursor.getLong(idColumn)
 
-                Timber.d("folderName : $folderName , mediaPath : $mediaPath , mediaUri : $mediaUri")
+                val contentUri = Uri.withAppendedPath(
+                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                    id.toString()
+                )
+
+                Timber.d("idColumn : $idColumn , id : $id , contentUri : $contentUri")
+
+                deleteImage(contentUri)
+
+                //Timber.d("folderName : $folderName , mediaPath : $mediaPath , mediaUri : $mediaUri")
             }
         } catch (exception: Exception) {
             exception.printStackTrace()
             null
         }
+
+    private fun deleteImage(contentUri: Uri) {
+        //매우 위험한 코드이다. 갤러리에 있는 모든 사진을 삭제해 버린다.
+        //하지만 안드로이드 Q 에서는 RecoverableSecurityException 에러가 나옵니다.
+        /*try {
+            contentResolver.delete(contentUri, null, null)
+        } catch (e: RecoverableSecurityException) {
+            // 권한이 없기 때문에 예외가 발생됩니다.
+            // RemoteAction은 Exception과 함께 전달됩니다.
+            // RemoteAction에서 IntentSender 객체를 가져올 수 있습니다.
+            // startIntentSenderForResult()를 호출하여 팝업을 띄웁니다.
+            val intentSender = e.userAction.actionIntent.intentSender
+            intentSender?.let {
+                startIntentSenderForResult(
+                    intentSender,
+                    123,
+                    null,
+                    0,
+                    0,
+                    0,
+                    null
+                )
+            }
+        }*/
+
+        //매우 위험한 코드이다. 갤러리에 있는 모든 사진을 삭제해 버린다.
+        //안드로이드 Q 에서는 실행은 되나 실제로 파일은 지워지지 않는다... 에러도 없다...?? 어렵다....
+        /*val file = File(mediaPath)
+        if(file.exists()) {
+            Timber.e("delete")
+            file.delete()
+        }*/
+    }
 
 
 }
