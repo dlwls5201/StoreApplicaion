@@ -349,8 +349,6 @@ class StoreActivity : AppCompatActivity() {
             //Android Q
             val values = ContentValues().apply {
 
-
-
                 val fileName = "BlackJin-${SystemClock.currentThreadTimeMillis()}.jpg"
                 Timber.d("fileName : $fileName")
 
@@ -373,7 +371,7 @@ class StoreActivity : AppCompatActivity() {
                 MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
             Timber.e("collection : $collection")
 
-            //requires android.permission.READ_EXTERNAL_STORAGE 권한이 없어도 진행 가능 합니다.
+            //android.permission.READ_EXTERNAL_STORAGE 권한이 없어도 진행 가능 합니다.
             //content://media/external/images/media/84
             val contentUri: Uri? =
                 contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
