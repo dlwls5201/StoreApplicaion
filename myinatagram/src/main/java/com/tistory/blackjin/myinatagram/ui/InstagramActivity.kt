@@ -1,22 +1,24 @@
 package com.tistory.blackjin.myinatagram.ui
 
+import android.app.Activity
 import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
+import androidx.core.net.toUri
 import androidx.databinding.DataBindingUtil
 import com.tistory.blackjin.myinatagram.R
 import com.tistory.blackjin.myinatagram.databinding.ActivityInstagramBinding
+import com.tistory.blackjin.myinatagram.ui.photo.OnShowImageListener
 import com.tistory.blackjin.myinatagram.ui.photo.PhotoFragment
 import timber.log.Timber
 import java.io.File
 
-/**
- * https://github.com/ParkSangGwon/TedImagePicker
- * https://github.com/Yalantis/uCrop
- */
 class InstagramActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityInstagramBinding
@@ -41,7 +43,7 @@ class InstagramActivity : AppCompatActivity() {
         binding.tvDone.setOnClickListener {
             supportFragmentManager.findFragmentById(R.id.fl_fragment)?.let { fragment ->
                 if (fragment is OnShowImageListener) {
-                    fragment.onShowImageUrls()
+                    fragment.onShowImageUrl()
                 }
             }
         }
@@ -61,6 +63,7 @@ class InstagramActivity : AppCompatActivity() {
             .commit()
     }
 
+    //카메라로부터 받아온 이미지는 여기에 저장됩니다.
     private var tempFile: File? = null
 
     private fun takePhoto() {
@@ -70,21 +73,31 @@ class InstagramActivity : AppCompatActivity() {
         tempFile = createImageFile()
 
         tempFile?.let { file ->
-            Timber.d("tempFile : ${file.absolutePath}")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
 
-            val photoUri = FileProvider.getUriForFile(
-                this, "${packageName}.provider", file
-            )
+                val photoUri = FileProvider.getUriForFile(
+                    this, "${packageName}.provider", file
+                )
 
-            Timber.d("photoUri : $photoUri")
+                Timber.d("file provider photoUri : $photoUri")
 
-            intent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
-            startActivityForResult(intent, PICK_FROM_CAMERA)
+                intent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
+                startActivityForResult(intent, PICK_FROM_CAMERA)
+
+            } else {
+
+                val photoUri = Uri.fromFile(file)
+
+                Timber.d("photoUri : $photoUri")
+
+                intent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
+                startActivityForResult(intent, PICK_FROM_CAMERA)
+            }
         }
 
     }
 
-    private fun createImageFile(): File {
+    internal fun createImageFile(): File {
 
         // 이미지 파일 이름 ( blackJin_ )
         val imageFileName = "blackJin_"
@@ -94,6 +107,45 @@ class InstagramActivity : AppCompatActivity() {
             File(getExternalFilesDir(Environment.DIRECTORY_PICTURES)?.absolutePath)
 
         return File.createTempFile(imageFileName, ".jpg", storageDir)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        Timber.d("requestCode : $requestCode , resultCode : $resultCode , data ; $data , tempFile : ${tempFile?.exists()}")
+        if(requestCode == PICK_FROM_CAMERA) {
+            tempFile?.let{ file ->
+                if(resultCode == Activity.RESULT_OK) {
+
+                    //카메라에서 찍은 사진 파일은 사이즈가 크므로 후처리를 해주는게 좋습니다.
+                    val uri = file.toUri()
+                    finishWithResultUri(uri)
+
+                } else {
+
+                    //카메라 작업이 취소 되었으므로 생성한 임시 파일을 제거해 줍니다.
+                    if(file.exists()) {
+                        file.delete()
+                    }
+                    Toast.makeText(this, "취소", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
+    internal fun finishWithResultUri(uri: Uri) {
+        setResult(
+            Activity.RESULT_OK, Intent()
+                .putExtra(EXTRA_PHOTO_URI, uri)
+        )
+        finish()
+    }
+
+    internal fun finishWithResultUri(uris: ArrayList<Uri>) {
+        setResult(
+            Activity.RESULT_OK, Intent()
+                .putParcelableArrayListExtra(EXTRA_PHOTO_URI_LIST, uris)
+        )
+        finish()
     }
 
     companion object {

@@ -1,7 +1,5 @@
 package com.tistory.blackjin.myinatagram.ui.photo
 
-import android.app.Activity
-import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
@@ -23,7 +21,6 @@ import com.tistory.blackjin.myinatagram.model.Album
 import com.tistory.blackjin.myinatagram.model.Media
 import com.tistory.blackjin.myinatagram.type.MediaType
 import com.tistory.blackjin.myinatagram.ui.InstagramActivity
-import com.tistory.blackjin.myinatagram.ui.OnShowImageListener
 import com.tistory.blackjin.myinatagram.util.GalleryUtil
 import com.yalantis.ucrop.callback.BitmapCropCallback
 import com.yalantis.ucrop.view.GestureCropImageView
@@ -41,6 +38,7 @@ class PhotoFragment : Fragment(), OnShowImageListener {
 
     private var disposable: Disposable? = null
 
+    //갤러리 선택 시 크롭된 이미지들은 GestureCropImageView 에 저장됩니다.
     //GestureCropImageView 를 너무 많이 저장하게 되면 OOM 이 발생합니다.
     private val mGestureCropImageViewList = mutableListOf<GestureCropImageView>()
     private var currentShowingUri: Uri? = null
@@ -136,6 +134,7 @@ class PhotoFragment : Fragment(), OnShowImageListener {
         }
     }
 
+    //MultiMedia 모드 일 때 선택할 수 있는 최대 숫자
     private val maxCount = 10
     private val maxCountMessage = "You can select up to 10"
 
@@ -170,9 +169,11 @@ class PhotoFragment : Fragment(), OnShowImageListener {
         }
     }
 
-    //TransformImageListener 가 onLoadComplete 를 호출 받고나서 다음 작업을 처리해야 합니다.
-    //즉 한번에 한번씩 작업을 실행해야 합니다.
+    //TransformImageListener 의 onLoadComplete() 함수를 순차적으로 호출해야 합니다.
+    //동시에 setTransformImageListener 호출하면 에러가 발생하므로 isPreviewLoadComplete 변수를 사용해 동작 중일 때는 다른 작업이 이뤄지지 않게 합니다.
     private var isPreviewLoadComplete = true
+
+    //크롭된 이미지의 최대 사이즈를 정합니다.
     private val maxImageSize = 1000
 
     private fun setUriToPreview(uri: Uri) {
@@ -211,7 +212,7 @@ class PhotoFragment : Fragment(), OnShowImageListener {
                 }
             }
 
-            val tempFile = createImageFile()
+            val tempFile = (requireActivity() as InstagramActivity).createImageFile()
             val outputUri = Uri.fromFile(tempFile)
 
             currentShowingUri = uri
@@ -225,18 +226,6 @@ class PhotoFragment : Fragment(), OnShowImageListener {
                 }
             }
         }
-    }
-
-    private fun createImageFile(): File {
-
-        // 이미지 파일 이름 ( blackJin_ )
-        val imageFileName = "blackJin_"
-
-        // 이미지가 저장될 폴더
-        val storageDir =
-            File(requireContext().getExternalFilesDir(Environment.DIRECTORY_PICTURES)?.absolutePath)
-
-        return File.createTempFile(imageFileName, ".jpg", storageDir)
     }
 
     private fun loadMedia() {
@@ -263,8 +252,7 @@ class PhotoFragment : Fragment(), OnShowImageListener {
 
     private var isLoading = false
 
-    //GestureCropImageViewList 의 onBitmapCropped 함수는
-    //백그라운드 쓰레드에서 병렬로 동작하므로 순서 동기화를 위한 인덱스 변수와 함수
+    //GestureCropImageViewList 의 onBitmapCropped 함수는 백그라운드 쓰레드에서 병렬로 동작하므로 순서 동기화를 위한 변수와 함수입니다.
     private var indexCount = 0
 
     @Synchronized
@@ -272,7 +260,7 @@ class PhotoFragment : Fragment(), OnShowImageListener {
         indexCount++
     }
 
-    override fun onShowImageUrls() {
+    override fun onShowImageUrl() {
 
         if (isLoading) {
             Toast.makeText(requireContext(), "loadding...", Toast.LENGTH_SHORT).show()
@@ -296,7 +284,7 @@ class PhotoFragment : Fragment(), OnShowImageListener {
                         imageWidth: Int,
                         imageHeight: Int
                     ) {
-                        setResultUri(resultUri)
+                        (requireActivity() as InstagramActivity).finishWithResultUri(resultUri)
                     }
 
                     override fun onCropFailure(t: Throwable) {
@@ -305,6 +293,7 @@ class PhotoFragment : Fragment(), OnShowImageListener {
                 })
         } else {
 
+            //클릭한 순서대로 uri 를 배치하기 위한 변수
             val uriMap = mutableMapOf<Int, Uri>()
 
             for ((index, value) in mGestureCropImageViewList.withIndex()) {
@@ -326,7 +315,7 @@ class PhotoFragment : Fragment(), OnShowImageListener {
 
                             plusIndexCount()
 
-                            //indexCount 를 확인해 마지막 스레드에서 uri 순서를 정렬한 후 작업한다.
+                            //indexCount 를 확인해 마지막 스레드에서 uri 순서를 정렬한 후 작업을 마칩니다.
                             if (indexCount == mGestureCropImageViewList.size) {
 
                                 val uris = ArrayList<Uri>()
@@ -336,12 +325,12 @@ class PhotoFragment : Fragment(), OnShowImageListener {
                                     uris.add(uri)
                                 }
 
-                                setResultUris(uris)
+                                (requireActivity() as InstagramActivity).finishWithResultUri(uris)
                             }
                         }
 
                         override fun onCropFailure(t: Throwable) {
-                            Timber.wtf("index : $index")
+                            Timber.wtf("index : $index -> ${t.message}")
                             finishForError(t)
                         }
                     })
@@ -349,33 +338,17 @@ class PhotoFragment : Fragment(), OnShowImageListener {
         }
     }
 
-    //setResultUri 함수는 임의로 생성된 불필요한 파일들을 모두 제거하고 실행해야 합니다.
-    private fun setResultUri(uri: Uri) {
+    override fun onDestroyView() {
+        super.onDestroyView()
         deleteZeroSizeBlackJinFile()
-
-        with(requireActivity()) {
-            setResult(
-                Activity.RESULT_OK, Intent()
-                    .putExtra(InstagramActivity.EXTRA_PHOTO_URI, uri)
-            )
-            finish()
-        }
     }
 
-    private fun setResultUris(uris: ArrayList<Uri>) {
-        deleteZeroSizeBlackJinFile()
-
-        with(requireActivity()) {
-            setResult(
-                Activity.RESULT_OK, Intent()
-                    .putParcelableArrayListExtra(InstagramActivity.EXTRA_PHOTO_URI_LIST, uris)
-            )
-            finish()
-        }
-    }
-
-    //onBitmapCropped 함수가 모두 동작된 후 마지막에 해당 함수를 실행해야합니다.
-    //그렇지 않으면 크롭된 이미지가 들어가야할 임시 파일을 미리 제거하게 됩니다.
+    //크롭된 이미지를 프리뷰에 보여주기 위해 createImageFile 함수에서 blackJin 이름의 파일을 갤러리 선택시 매번 생성합니다.
+    //최종 작업을 진행하면 blackJin 으로 시작하는 파일에 크롭된 이미지를 저장하는데 선택되지 않은 빈 파일 또한 생성되어 있기 때문에 이 파일들을 제거해 줍니다.
+    //
+    //아래 경로에서 파일을 확인하실 수 있습니다.
+    //usb 디버깅 모드 연결 후 shift 연속두번 -> Device File Explorer 검색 ->
+    //storage > self > primary > Android > data > {package name} > files > Pictures
     private fun deleteZeroSizeBlackJinFile() {
         val path =
             requireContext().getExternalFilesDir(Environment.DIRECTORY_PICTURES)?.absolutePath
