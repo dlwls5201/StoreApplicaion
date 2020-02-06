@@ -28,8 +28,6 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".StoreActivity" />
-
         <!-- 사진 촬영을 위한 provider -->
         <provider
             android:name="androidx.core.content.FileProvider"
